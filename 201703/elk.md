@@ -42,9 +42,9 @@ docker run -d -p 9200:9200 --name elasticsearch elasticsearch
 
 ```
 ### 启动Logstash 
-logstash.conf
 
 ```
+# 1. 新建配置文件logstash.conf
 input {
     beats {
         port => 5044
@@ -61,11 +61,11 @@ output {
         
     }
 }
-```
 
-```
+# 2.启动容器，暴露并映射端口，挂载配置文件
 docker run -d --expose 5044 -p 5044:5044 --name logstash -v "$PWD":/config-dir logstash -f /config-dir/logstash.conf
 ```
+
 
 ### 启动Filebeat
 下载地址：[https://www.elastic.co/downloads/beats/filebeat](https://www.elastic.co/downloads/beats/filebeat)
@@ -116,7 +116,8 @@ echo '127.0.0.1 - - [13/Mar/2017:22:57:14 +0800] "GET / HTTP/1.1" 200 3700 "-" "
 ![](assets/elk_kibana_01.png)
 ![](assets/elk_kibana_02.png)
 ## 总结
-本文主要讲述了如何一步步搭建ELK的过程，以及Filebeat在其中所起的作用。这儿仅仅给大家做了一个演示，要在生产环境中部署时，还需考虑容器内存问题，elasticsearch与logstash都是相对吃内存的，如果不加以限制，很可能会拖垮你整个服务器。当然安全因素也是大家不能忽视的，如传输的安全性、端口权限的最小化暴露程度，防火墙设置等。
+本文主要讲述了如何一步步搭建ELK的过程，以及Filebeat在其中所起的作用。<br>
+这儿仅仅给大家做了一个演示，要在生产环境中部署时，还需使用数据卷进行数据持久化，容器内存问题也需考虑，elasticsearch与logstash都是相对吃内存的，如果不加以限制，很可能会拖垮你整个服务器。<br>当然安全因素也是大家不能忽视的，如传输的安全性、端口权限的最小化暴露程度，防火墙设置等。
 
 ## 后续
 1. logstash解析日志格式，如JAVA、nginx、nodejs等日志；
