@@ -1,0 +1,9 @@
+filebeat:
+  prospectors:
+    - paths:
+        - /tmp/test.log #日志文件地址
+      input_type: log #从文件中读取
+      tail_files: true #以文件末尾开始读取数据
+output:
+  logstash:
+      hosts: ["10.18.29.32:5400"]
