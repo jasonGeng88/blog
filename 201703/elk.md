@@ -6,8 +6,6 @@
 1. 系统：centos7
 2. docker 1.12.1
 
-**这里没选在本机演示的原因，因为我本机的内存不够，跑不起来，所以选择在服务器上做演示**
-
 
 ## 介绍
 
@@ -32,7 +30,6 @@ Kibana 是一款基于 Apache 开源协议，使用 JavaScript 语言编写，�
 ### 引入Filebeat
 ![](assets/elk_architecture_new.png)
 
-优势：Filebeat在服务器上的开销要比Logstash低
 
 ## 部署
 
