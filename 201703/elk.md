@@ -6,6 +6,8 @@
 1. 系统：centos7
 2. docker 1.12.1
 
+**这里没选在本机演示的原因，因为我本机的内存不够，跑不起来，所以选择在服务器上做演示**
+
 
 ## 介绍
 
@@ -30,7 +32,7 @@ Kibana 是一款基于 Apache 开源协议，使用 JavaScript 语言编写，�
 ### 引入Filebeat
 ![](assets/elk_architecture_new.png)
 
-### 原因：Filebeat在服务器上的开销要比Logstash低
+优势：Filebeat在服务器上的开销要比Logstash低
 
 ## 部署
 
@@ -54,27 +56,29 @@ output {
         codec => rubydebug
     }
     elasticsearch {
-        hosts => ["10.18.29.32:9200"]
+        #填写实际情况elasticsearch的访问IP，因为是跨容器间的访问，使用内网、公网IP，不要填写127.0.0.1|localhost
+        hosts => ["{$ELASTIC_IP}:9200"] 
+        
     }
 }
 ```
 
 ```
-docker run -d --expose 5400 -p 5400:5400 --name logstash -v "$PWD":/config-dir logstash -f /config-dir/logstash.conf
+docker run -d --expose 5044 -p 5044:5044 --name logstash -v "$PWD":/config-dir logstash -f /config-dir/logstash.conf
 ```
 
 ### 启动Filebeat
 下载地址：[https://www.elastic.co/downloads/beats/filebeat](https://www.elastic.co/downloads/beats/filebeat)
 
-1. 下载Filebeat压缩包
-2. 解压文件：
-```
-tar -xvf filebeat-5.2.2-darwin-x86_64.tar.gz
-```
-
-3. 新建配置文件filebeat.yml
 
 ```
+# 1.下载Filebeat压缩包
+wget https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-5.2.2-linux-x86_64.tar.gz
+
+# 2.解压文件
+tar -xvf filebeat-5.2.2-linux-x86_64.tar.gz
+
+# 3.新建配置文件filebeat.yml
 filebeat:
   prospectors:
     - paths:
@@ -83,29 +87,40 @@ filebeat:
       tail_files: true #以文件末尾开始读取数据
 output:
   logstash:
-      hosts: ["10.18.29.32:5400"]
-```
-
-4. 运行filebeat
-
-```
-./filebeat-5.2.2-darwin-x86_64/filebeat -e -c filebeat.yml
+      hosts: ["{$LOGSTASH_IP}:5044"] #填写logstash的访问IP
+      
+# 4.运行filebeat  
+./filebeat-5.2.2-linux-x86_64/filebeat -e -c filebeat.yml
 ```
 
 
 ### 启动Kibana
 ```
-docker run -d --name kibana -e ELASTICSEARCH_URL=http://10.18.29.32:9200 -p 5601:5601 kibana
+docker run -d --name kibana -e ELASTICSEARCH_URL=http://{$ELASTIC_IP}:9200 -p 5601:5601 kibana
 ```
 
 
 ## 测试
-1. 向/tmp/test.log中写入数据，模拟日志数据
+1. 模拟日志数据
 
 ```
+# 1.创建日志文件
+touch /tmp/test.log
+
+# 2.向日志文件中写入一条nginx访问日志
+echo '127.0.0.1 - - [13/Mar/2017:22:57:14 +0800] "GET / HTTP/1.1" 200 3700 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.86 Safari/537.36" "-"' >> /tmp/test.log
 ```
 
+2. 访问 http://{$KIBANA_IP}:5601
+
+![](assets/elk_kibana_01.png)
+![](assets/elk_kibana_02.png)
 ## 总结
-本文主要讲述了如何一步步搭建ELK的过程，以及Filebeat在其中所起的作用。当然这仅仅作为大家了解ELK的基础，如果要在生产环境中部署，还需考虑服务器安全因素，如传输的安全性、端口权限的最小化暴露程度，防火墙设置等等。
+本文主要讲述了如何一步步搭建ELK的过程，以及Filebeat在其中所起的作用。这儿仅仅给大家做了一个演示，要在生产环境中部署时，还需考虑容器内存问题，elasticsearch与logstash都是相对吃内存的，如果不加以限制，很可能会拖垮你整个服务器。当然安全因素也是大家不能忽视的，如传输的安全性、端口权限的最小化暴露程度，防火墙设置等。
+
+## 后续
+1. logstash解析日志格式，如JAVA、nginx、nodejs等日志；
+2. elasticsearch的常用搜索语法；
+2. 通过kibana制作可视化图表；
 
 
