@@ -1,5 +1,7 @@
 # ELK实战之解析各类日志文件
  
+> 摘要：本文属于原创，未经允许不得转载！
+ 
 > ELK环境是基于docker进行的容器化部署 <br>
 > 关于容器化部署，详情见上一篇 [“ELK：基于ELK+Filebeat的日志搭建”](https://github.com/jasonGeng88/blog/blob/master/201703/elk.md)
  
@@ -10,10 +12,12 @@
 ## 介绍
 基于上一篇讲述了ELK日志系统的搭建，那么就该讲讲ELK在生产中的实际使用场景了。<br>
 
-作为一个日志中心，肯定不单单只收集一种日志，那每种不同的日志，它的存储格式势必有所差异，但同时又存在一些共性的东西（如日志级别，记录时间等）。我们如何去解析不同类型的日志、提炼共性的字段，这就是我写本篇文章的主旨。
+作为一个日志中心，它会收集各种各样的日志，可以用于问题排查，数据监控，统计分析等等。那么对于繁多的日志，它们都有各自的存储格式，我们如何来区分它们，对于不同的日志格式，我们又是如何去解析的呢？ <br>
+
+一个串没有结构化的日志，给人的感觉很凌乱。我们需要的是提取日志中的有效字段，并以我们期望的形式进行展现。下面我将和大家一起来探究日志解析的奥秘。
 
 ## 原理
-依照前文，使用filebeat作为日志上传，logstash进行日志处理，elasticsearch作为日志存储与搜索，最后使用kibana作为日志的可视化呈现。所以不难发现，日志解析主要还是logstash做的事情。<br>
+依照前文，使用filebeat来上传日志数据，logstash进行日志收集与处理，elasticsearch作为日志存储与搜索引擎，最后使用kibana展现日志的可视化输出。所以不难发现，日志解析主要还是logstash做的事情。<br>
 
 说到logstash，它到底有哪些东西呢？我们来简单看下：
 ![](assets/elk_parse_log_01.png)
@@ -25,7 +29,7 @@
 3. OUTPUTS: 将解析的日志数据输出至存储器（[elasticseach、file、syslog等](https://www.elastic.co/guide/en/logstash/current/output-plugins.html)）；
 
 
-下面来讲讲filter中的常用几个插件（*后面日志解析会用到*）：
+看来FILTERS是我们探究的重点，先来来看看它常用到的几个插件（*后面日志解析会用到*）：
 
 1. grok：采用正则的方式，解析原始日志格式，使其结构化；
 2. geoip：根据IP字段，解析出对应的地理位置、经纬度等；
@@ -34,8 +38,8 @@
 *注意：codec也是经常会使用到的，它主要作用在INPUTS和OUTPUTS中，[提供有json的格式转换、multiline的多行日志合并等](https://www.elastic.co/guide/en/logstash/current/codec-plugins.html)*
 
 ## 场景
-说了这么说，到底怎么用呢？下面我通过几个例子，向大家讲讲日志解析具体是怎么做的。
-我们先易后难，通过几个例子，希望能帮助大家彻底解决日志解析问题。
+说了这么多，到底怎么用呢？我们还是通过几个例子，具体来看看是怎么实现的吧。<br>
+秉承先易后难的原则，希望大家全部看完后，对以后遇到更复杂的日志，也能处理的游刃有余。
 
 **1. NodeJS 日志**
 
@@ -91,11 +95,11 @@ filter {
 
 	1. grok中的match内容：
 		1. 	key：表示所需解析的内容；
-		2. value：表示匹配解析规则，生成对应字段；
-		3. 解析规则：%{正则模板:自定义字段}，其中TIMESTAMP_ISO8601、IPORHOST等都是grok提供的正则模板（[可在此查阅](https://github.com/logstash-plugins/logstash-patterns-core/blob/master/patterns/grok-patterns)）；
-	2. geoip：是分析IP值，生成IP对应的地理位置信息；
+		2. value：表示解析的匹配规则，提取出对应的字段；
+		3. 解析语法：%{正则模板:自定义字段}，其中TIMESTAMP_ISO8601、IPORHOST等都是grok提供的正则模板（[可在此查阅](https://github.com/logstash-plugins/logstash-patterns-core/blob/master/patterns/grok-patterns)）；
+	2. geoip：通过分析IP值，产生IP对应的地理位置信息；
 
-	*这里是否发现@timestamp与timestamp不一致，@timestamp表示该日志的读取时间，在elasticsearch中作为时间查找索引。下面讲解Nginx日志时，会去修正这一问题。*
+	*这里是否发现@timestamp与timestamp不一致，@timestamp表示该日志的读取时间，在elasticsearch中作为时间检索索引。下面讲解Nginx日志时，会去修正这一问题。*
 	
 ****
 	
@@ -149,7 +153,7 @@ filter {
 * **Filter配置讲解**
 	1. grok：
 		1. 是不是很不可思议，上一示例中我们匹配规则写了一长串，这个仅仅一个COMBINEDAPACHELOG就搞定了！
-		2. grok除了提供上面那种基础的正则规则，还对常用的日志（java,http,syslog等）提供的相应解析模板，[详情见grok的120中正则模板](https://github.com/logstash-plugins/logstash-patterns-core/tree/master/patterns)；
+		2. grok除了提供上面那种基础的正则规则，还对常用的日志（java,http,syslog等）提供的相应解析模板，本质还是那么一长串正则，[详情见grok的120中正则模板](https://github.com/logstash-plugins/logstash-patterns-core/tree/master/patterns)；
 	2. date:
 		1. match：数组中第一个值为要匹配的时间字段，后面的n个是匹配规则，它们的关系是or的关系，满足一个即可；
 		2. target：将match中匹配的时间替换该字段，默认替换@timestamp；
@@ -222,13 +226,10 @@ filter {
 
 
 ## 总结
-本文开始简单介绍了logstash的三大模块：INPUTS、FILTERS、OUTPUTS。之后通过3个示例的介绍，给大家讲解了FILTERS中grok、geoip、date三个常用插件的使用，以及在处理多行日志上的做法。<br>
+本文开始简单介绍了logstash的三大模块：INPUTS、FILTERS、OUTPUTS。之后通过Demo了3个小示例，给大家讲解了FILTERS中grok、geoip、date三个常用插件的使用，以及在处理多行日志上的做法。<br>
 
-在描述的过程中可能不能面面俱到，但秉承的原则是“<font color=red>知其然知其所以然</font>”。如果真遇到解析某类日志的话，相信在网上搜一下，有一大堆案例，但是否都能理解呢？<br>
+在描述的过程中可能不能面面俱到，但我还是始终坚持“<font color=red>知其然知其所以然</font>”的理念。写的每一行代码，你都得心中有数。功能的实现不意味着结束，我们何不多折磨自己一下，走好最后的一公里<br>
 
 最后，有兴趣可以去看一下它的官方手册，对这三大模块，各自都提供了非常多的插件支持。我这里只是一个简单的使用，希望对大家有所帮助。
 
-## 后续
-1. kibana可视化视图的使用；
-2. elk的分布式扩展；
 
