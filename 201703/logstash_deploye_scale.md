@@ -1,4 +1,4 @@
-# 【译】ELK日志中心分布式架构的逐步演化
+# [译] ELK日志中心分布式架构的逐步演化
  
 > 摘要：本文属于原创，未经允许不得转载！
 
@@ -37,7 +37,7 @@ Logstash最简单的架构可以由一个Logstash实例和一个ES实例组成�
 ![](assets/logstash_scale_02.png)
 
 ## 引入 Filebeat
-[Filebeat](https://www.elastic.co/guide/en/beats/filebeat/current/index.html) 是一款有Go语言编写的轻量级日志收集工具，主要作用是收集服务器上的日志，并将收集的数据输出到目标机器上进行进一步处理。Filebeat 使用 [Beats](https://www.elastic.co/guide/en/beats/libbeat/current/index.html) 协议与Logstash实例进行通信。使用 [Beats input 插件](https://www.elastic.co/guide/en/logstash/5.2/plugins-inputs-beats.html) 来配置你的Logstash的实例，让其能够接收Beats传来的数据。
+[Filebeat](https://www.elastic.co/guide/en/beats/filebeat/current/index.html) 是一款有Go语言编写的轻量级日志收集工具，主要作用是收集当前服务器上的日志，并将收集的数据输出到目标机器上进行进一步处理。Filebeat 使用 [Beats](https://www.elastic.co/guide/en/beats/libbeat/current/index.html) 协议与Logstash实例进行通信。使用 [Beats input 插件](https://www.elastic.co/guide/en/logstash/5.2/plugins-inputs-beats.html) 来配置你的Logstash的实例，让其能够接收Beats传来的数据。
 
 Filebeat使用的是源数据所在机器的计算资源，Beats input 插件最小化了Logstash实例的资源需求，这种架构对于有资源限制要求的场景来说，非常有用。
 
@@ -49,11 +49,11 @@ Logstash 一般不与ES的单节点进行通信，而是和多个节点组成的
 
 你可以使用ES提供的REST API接口向集群写入数据，传输的数据格式为JSON。使用REST接口在代码中不需要引入JAVA的客户端类或任何额外的JAR包。相比节点协议与传输格式，没有性能上的弊端。若要做到接口安全通信，可以使用 [X-Pack Security](https://www.elastic.co/guide/en/x-pack/current/xpack-security.html) ，它支持SSL与HTTP basic的安全校验。
 
-当你使用HTTP协议时，可以在Logstash的 ES output 插件的配置中，提供ES集群的多个请求地址，对ES的请求将自动做到负载均衡。多个ES节点通过路由流量到活跃节点的方式也为ES集群提供的高可用性。
+当你使用HTTP协议时，可以在Logstash的 ES output 插件配置中，提供ES集群的多个请求地址，ES的请求将自动做到负载均衡。多个ES节点通过路由流量到活跃节点的方式也为ES集群提供的高可用性。
 
 你也可以使用ES的 JAVA API将数据序列化为二进制后，再进行传输。该协议可以嗅探请求的地址，你可以选择集群中任意的客户端或节点进行通信。
 
-使用HTTP或二进制协议，可以将ES集群与Logstash实例相分离。 与此相反，节点协议把运行Logstash实例的机器作为一个运行中的ES节点，与ES集群连接在了一起。数据同步是将数据从一个节点传输至集群中的其余节点。当该机器作为集群的一部分，该段网络拓扑变得可用，对于使用相对少量持久连接的场景来说，使用节点协议是较合适的。
+使用HTTP，可以将ES集群与Logstash实例相分离。 与此相反，节点协议把运行Logstash实例的机器作为一个运行中的ES节点，与ES集群连接在了一起。数据同步是将数据从一个节点传输至集群中的其余节点。当该机器作为集群的一部分，该段网络拓扑变得可用，对于使用相对少量持久连接的场景来说，使用节点协议是较合适的。
 
 你也可以使用第三方的负载均衡硬件或软件，来处理Logstash与外部应用的连接。
 
@@ -63,11 +63,11 @@ Logstash 一般不与ES的单节点进行通信，而是和多个节点组成的
 
 ## 使用消息队列处理吞吐量峰值
 
-当Logstash接收数据的能力超过了ES集群处理数据的能力时，你可以使用消息队列来作为缓冲。默认情况下，当数据的处理速率低于接收速率，Logstash接收的将产生瓶颈。由于该瓶颈会导致事件在数据源中被缓冲，所以消息队列的抗压能力将成为你部署中的重要环节。
+当Logstash接收数据的能力超过了ES集群处理数据的能力时，你可以使用消息队列来作为缓冲。默认情况下，当数据的处理速率低于接收速率，Logstash的接收将产生瓶颈。由于该瓶颈会导致事件在数据源中被缓冲，所以使用消息队列来抗压将成为你架构中的重要环节。
 
 添加一个消息队列到你部署的Logstash中，对数据丢失也提供了一定的保护。当Logstash实例在消息队列中消费数据失败时，数据将会在另一个活跃的Logstash中重新消费。
 
-目前市面上提供的第三方消息队列，如Redis，Kafka，RabbitMQ。Logstash都提供了相应的input、output插件与其做集成。当Logstash的部署中添加了消息队列，Logstash的处理将分为两个阶段：第一阶段，传输实例，负责处理数据采集，并将其存入消息队列；第二阶段，存储实例，从消息队列中获取数据，应用所配置的filter，将处理过的数据写入ES中。
+目前市面上提供的第三方消息队列，如Redis，Kafka，RabbitMQ。Logstash都提供了相应的input、output插件与之做集成。当Logstash的部署中添加了消息队列，Logstash的处理将分为两个阶段：第一阶段（传输实例），负责处理数据采集，并将其存入消息队列；第二阶段（存储实例），从消息队列中获取数据，应用所配置的filter，将处理过的数据写入ES中。
 
 ![](assets/logstash_scale_05.png)
 
@@ -81,7 +81,7 @@ Logstash 一般不与ES的单节点进行通信，而是和多个节点组成的
 
 ![](assets/logstash_scale_07.png)
 
-该架构基于你配置的INPUT，可以并行工作。对于更多的INPUT输入，你可以增加更多的Logstash实例来进行水平扩展。这也也增加了架构的可靠性，消除了单点故障。
+该架构基于你配置的INPUT，可以并行工作。对于更多的INPUT输入，你可以增加更多的Logstash实例来进行水平扩展。这也增加了架构的可靠性，消除了单点故障。
 
 ## Logstash的扩展
 
@@ -89,7 +89,7 @@ Logstash 一般不与ES的单节点进行通信，而是和多个节点组成的
 
 * INPUT层从数据源中采集数据，由合适的input 插件组成。
 * 消息队列作为数据采集的缓冲与故障转移的保护。
-* FILTER层从消息队列中获取的数据进行解析和其他操作。
+* FILTER层从消息队列中获取数据进行解析和其他操作。
 * indexing层将处理的数据传输到ES。
 
 这其中的每一层都可以通过增加计算资源进行扩展。随着你使用场景的发展与所需资源的增加，定期检查这些组件的性能。当Logstash一旦遇到输入的瓶颈，可考虑增加消息队列的存储。相反，通过增加更多的Logstash输出实例来增加ES集群的写入速率。
