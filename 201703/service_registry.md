@@ -31,7 +31,7 @@
 
 理解了其内在的本质，再看下面的流程图就很清楚了。
 
-![](assets/service_registry_01.jpg)
+![](assets/service_registry_01.png)
 
 1. 服务注册：服务提供者将自身的服务信息注册进注册中心；
 2. 服务订阅：服务消费者从注册中心获取服务信息，并对其进行监听；
@@ -52,42 +52,191 @@
 
 *由于篇幅有限，服务消费者相关内容将在下篇详细展开*
 
-## 技术选型
+## 技术方案
 
-**服务注册中心：**作为整个架构中的核心，需要做到的是可分布式、持久化存储的中心服务器，同时负责将服务注册信息的更新通知实时的Push给服务消费者，这里选用的是ZK（zookeeper）。
+**服务注册中心：**作为整个架构中的核心，需要做到的是可分布式、持久化存储的中心服务器，同时负责将服务注册信息的更新通知实时的Push给服务消费者，这里选用的是 ZK（zookeeper）。
 
-**服务提供者：**启动服务，这里包含各种语言实现的服务（如JAVA、PHP等），通过Registrator完成服务的自动注册。
+大家可以把 ZK 想象成文件目录，注册中心在 ZK 中的展现就是节点路径图，不同的节点下存放者相应的服务信息，ZK路径图如下：
+
+![](assets/service_registry_02.png)
+
+**服务提供者：**通过docker启动服务，这里包含各种语言实现的服务（如JAVA、PHP等），通过Registrator完成服务的自动注册。
+
+## 示例
+
+代码仓库地址：[https://github.com/jasonGeng88/service_registry_discovery](https://github.com/jasonGeng88/service_registry_discovery)
+
+示例主要从4个方面演示：
+
+1. 框架搭建
+2. 服务准备
+3. 场景演示
+4. 可用性测试
+
+### 框架搭建：
+
+* ZK 部署
+	* 配置文件（*为演示方便，这里在单台机器上运行*）：
+
+	![](assets/service_registry_zk_01.png)
+
+	* 启动命令
+
+	```
+	cd zookeeper && docker-compose up -d
+	```
+	
+	* 查看结果
+
+	![](assets/service_registry_zk_02.png)
+	
+
+* Registrator 部署
+	* 配置文件
+
+	![](assets/service_registry_re_01.png) 
+	
+	* 启动命令
+
+	```
+	cd registrator/ && docker-compose up -d
+	```	
+	
+	* 查看结果
+
+	![](assets/service_registry_re_02.png)
+	
+目前框架已搭建完毕，我们来连接一台ZK，来观察节点情况：
+
+```
+# 进入 ZK 容器
+docker exec -it zookeeper_zoo1_1 /bin/bash
+# 连接 ZK
+zkCli.sh -server 127.0.0.1:2181
+```
+
+![](assets/service_registry_result_01.png)
+
+### 服务准备：
+项目中为演示准备了2个服务，分别是用JAVA、PHP实现的。
+
+**java_service_1（由springboot实现）:**
+
+*进入 services/java_service_1 执行以下操作*
+
+* 启动文件
+
+```
+package com.example;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@RestController
+@SpringBootApplication
+public class DemoApplication {
+
+	@RequestMapping("/")
+    String home() {
+        return "This is Service 1.";
+    }
+
+	public static void main(String[] args) {
+		SpringApplication.run(DemoApplication.class, args);
+	}
+}
+
+```
+
+* 打包jar文件
+
+这里使用 [Spring Boot CLI](https://docs.spring.io/spring-boot/docs/current/reference/html/getting-started-installing-spring-boot.html) 进行打包
+
+```
+spring jar ROOT.jar src/main/java/com/example/DemoApplication.java
+```
+
+* 构建镜像
+
+```
+# java_service_1 为你要构建的镜像名，tag默认为latest
+docker build -t java_service_1 .
+```
+
+**php_service_2:**
+
+*进入 services/php_service_2 执行以下操作*
+
+* index文件
+
+```
+<?php
+
+echo 'This is Service 2.';
+
+```
+
+* 构建镜像
+
+```
+# php_service_2 为你要构建的镜像名，tag默认为latest
+docker build -t php_service_2 .
+```
+
+### 场景演示：
+* 场景 1：启动 service_1（JAVA）服务
+
+```
+docker-compose up -d service_1
+```
+
+![](assets/service_registry_case_1.png)
+
+查看 ZK 节点情况
+
+![](assets/service_registry_case_1_zk.png)
+
+* 场景 2：启动service_2（PHP）服务
+
+```
+docker-compose up -d service_2
+```
+
+![](assets/service_registry_case_2.png)
+
+查看 ZK 节点情况
+
+![](assets/service_registry_case_2_zk.png)
+
+* 场景 3：扩展service_2（PHP）服务，个数为2
+
+```
+docker-compose up -d service_2
+```
+
+![](assets/service_registry_case_3.png)
+
+查看 ZK 节点情况
+
+![](assets/service_registry_case_3_zk.png)
 
 
-### 实例
-* 服务注册中心：ZK
-* 服务提供者：springboot（JAVA）
-* 服务注册进程：registrator
-* 注册中心节点路径图
+* 场景 4：注销service_1（JAVA）服务
 
-* ZK搭建
-* 构建springboot
-* 启动registrator
+```
+docker-compose up -d service_2
+```
 
-* 验证场景：
-* 1. 注册服务
-* 2. 扩展服务
-* 3. 注销服务
+![](assets/service_registry_case_4.png)
 
+查看 ZK 节点情况
 
-### 扩展
-可用性
-扩展性
-安全性
+![](assets/service_registry_case_4_zk.png)
 
-### 高可用
-1. ZK注册中心，采用(2n+1)节点部署方式，通过master选举方式，容许n个节点不可用，服务仍旧可用；
-2. 服务注册：服务多机器部署，单机器采用多个协同进程进去服务注册，防止单进程不可用。多机器部署，容许单机器不可用；
-3. 服务发现：获取注册中心服务节点信息，缓存节点信息，减少网络请求，同时减少对注册中心的依赖，提高服务的可用性；
 
 ### 优化点
-* zk访问控制
-* registrator失效自动切换地址
+* 在生产环境中，zk安全连接、节点访问控制都是需要注意的。简单做法，可以把连接地址改成内网IP，添加防火墙策略来限制连接客户端。
+* Registrator这里采用的是其多个进程分别连接不同的节点，来防止Registrator的单点故障。由于Registrator所用开销较小，在服务数量与ZK节点数量不大的情况下，不会产生问题。 较好的方式是：Registrator提供失效自动地址切换功能（*目前官方文档好像没有提供此方案*）。
 
 ## 总结
 
