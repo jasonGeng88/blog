@@ -38,7 +38,7 @@
 		* 	服务代码对注册中心进行了硬编码，若更换了注册中心，服务代码也必须跟着调整；
 		*  注册中心必须与每个服务都保持通信，来做心跳检测。如果服务很多时，对注册中心也是一种额外的开销；
 
-*  **第三方注册：** 采用协同进程的方式，监听服务进程的变化，将服务信息写入注册中心。
+*  **第三方注册（<font color=red>本文采用方式</font>）：** 采用协同进程的方式，监听服务进程的变化，将服务信息写入注册中心。
 	*  好处：做到了服务与注册中心的解耦，对服务而言，完成了服务的自动化注册；
 	*  问题：协同进程本身也要考虑高可用，否则将成为单点故障的风险点；
 
@@ -52,7 +52,7 @@
 
 ![](assets/service_registry_02.png)
 
-**服务提供者：** 服务以 docker 容器化方式部署（做到服务端口的动态创建），并以 [docker-compose](https://docs.docker.com/compose/) 的方式来管理，这里包含各种语言实现的服务（如JAVA、PHP等），通过 [Registrator](http://gliderlabs.com/registrator/latest/) 完成服务的自动注册。
+**服务提供者：** 服务以 docker 容器化方式部署（实现服务端口的动态生成），并以 [docker-compose](https://docs.docker.com/compose/) 的方式来管理，这里包含各种语言实现的服务（如JAVA、PHP等），通过 [Registrator](http://gliderlabs.com/registrator/latest/) 完成服务的自动注册。
 
 ## 技术说明
 
@@ -68,7 +68,7 @@
 
 **代码地址：** [https://github.com/jasonGeng88/service_registry_discovery](https://github.com/jasonGeng88/service_registry_discovery)
 
-示例主要从4个方面演示：
+示例主要从3个方面演示：
 
 1. 框架搭建
 2. 服务准备
