@@ -82,7 +82,7 @@
 * zookeeper/docker-compose.yml （*为演示方便，这里在单台机器上运行*）：
 	
 ```yaml
-version: '2' //docker-compose版本
+version: '2' #docker-compose版本
 services:
     zoo1:
         image: zookeeper
@@ -319,7 +319,7 @@ docker-compose up -d service_2
 ![](assets/service_registry_case_4_zk.png)
 
 
-### 优化点
+## 优化点
 * 在生产环境中，zk安全连接、节点访问控制都是需要注意的。简单做法，可以把连接地址改成内网IP，添加防火墙策略来限制连接客户端。
 
 * Registrator这里采用的是其多个进程分别连接不同的节点，来防止Registrator的单点故障。由于Registrator所用开销较小，在服务数量与ZK节点数量不大的情况下，不会产生问题。 较好的方式是：Registrator提供失效自动地址切换功能（*目前官方文档好像没有提供此方案，有了解的同学可以留言告诉我*）。
