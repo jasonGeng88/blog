@@ -1,6 +1,6 @@
 # [译] ELK日志中心分布式架构的逐步演化
  
-> 摘要：本文属于原创，未经允许不得转载！
+> 摘要：本文属于原创，欢迎转载，转载请保留出处：[https://github.com/jasonGeng88/blog](https://github.com/jasonGeng88/blog)
 
 ## 当前环境
 1. logstash：5.2

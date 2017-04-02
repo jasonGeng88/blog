@@ -1,6 +1,6 @@
 # 基于Docker、Registrator、Zookeeper实现的服务自动注册
  
-> 摘要：本文属于原创，未经允许不得转载！
+> 摘要：本文属于原创，欢迎转载，转载请保留出处：[https://github.com/jasonGeng88/blog](https://github.com/jasonGeng88/blog)
 > 
 > 本文所有服务均采用docker容器化方式部署 
  
