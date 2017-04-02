@@ -10,3 +10,5 @@
 	* [ELK：实战解析各类日志文件](https://github.com/jasonGeng88/blog/blob/master/201703/elk_parse_log.md)
 
 	* [[译] ELK日志中心分布式架构的逐步演化](https://github.com/jasonGeng88/blog/blob/master/201703/logstash_deploye_scale.md)
+
+	* [基于Docker、Registrator、Zookeeper实现的服务自动注册](https://github.com/jasonGeng88/blog/blob/master/201703/service_registry.md)

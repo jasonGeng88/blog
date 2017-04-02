@@ -1,5 +1,5 @@
 # 基于ELK+Filebeat搭建日志中心
-> 摘要：本文属于原创，未经允许不得转载！
+> 摘要：本文属于原创，欢迎转载，转载请保留出处：[https://github.com/jasonGeng88/blog](https://github.com/jasonGeng88/blog)
  
 > 本文是基于docker进行的容器化搭建ELK 
  

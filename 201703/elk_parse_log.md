@@ -1,6 +1,6 @@
 # ELK实战之解析各类日志文件
  
-> 摘要：本文属于原创，未经允许不得转载！
+> 摘要：本文属于原创，欢迎转载，转载请保留出处：[https://github.com/jasonGeng88/blog](https://github.com/jasonGeng88/blog)
  
 > ELK环境是基于docker进行的容器化部署 <br>
 > 关于容器化部署，详情见上一篇 [“ELK：基于ELK+Filebeat的日志搭建”](https://github.com/jasonGeng88/blog/blob/master/201703/elk.md)

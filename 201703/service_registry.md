@@ -1,6 +1,6 @@
-# 基于Docker、Registrator、Zookeeper实现服务自动注册
+# 基于Docker、Registrator、Zookeeper实现的服务自动注册
  
-> 摘要：本文属于原创，未经允许不得转载！
+> 摘要：本文属于原创，欢迎转载，转载请保留出处：[https://github.com/jasonGeng88/blog](https://github.com/jasonGeng88/blog)
 > 
 > 本文所有服务均采用docker容器化方式部署 
  
@@ -38,7 +38,7 @@
 		* 	服务代码对注册中心进行了硬编码，若更换了注册中心，服务代码也必须跟着调整；
 		*  注册中心必须与每个服务都保持通信，来做心跳检测。如果服务很多时，对注册中心也是一种额外的开销；
 
-*  **第三方注册：** 采用协同进程的方式，监听服务进程的变化，将服务信息写入注册中心。
+*  **第三方注册（<font color=red>本文采用方式</font>）：** 采用协同进程的方式，监听服务进程的变化，将服务信息写入注册中心。
 	*  好处：做到了服务与注册中心的解耦，对服务而言，完成了服务的自动化注册；
 	*  问题：协同进程本身也要考虑高可用，否则将成为单点故障的风险点；
 
@@ -52,7 +52,7 @@
 
 ![](assets/service_registry_02.png)
 
-**服务提供者：** 服务以 docker 容器化方式部署（做到服务端口的动态创建），并以 [docker-compose](https://docs.docker.com/compose/) 的方式来管理，这里包含各种语言实现的服务（如JAVA、PHP等），通过 [Registrator](http://gliderlabs.com/registrator/latest/) 完成服务的自动注册。
+**服务提供者：** 服务以 docker 容器化方式部署（实现服务端口的动态生成），并以 [docker-compose](https://docs.docker.com/compose/) 的方式来管理，这里包含各种语言实现的服务（如JAVA、PHP等），通过 [Registrator](http://gliderlabs.com/registrator/latest/) 完成服务的自动注册。
 
 ## 技术说明
 
@@ -68,7 +68,7 @@
 
 **代码地址：** [https://github.com/jasonGeng88/service_registry_discovery](https://github.com/jasonGeng88/service_registry_discovery)
 
-示例主要从4个方面演示：
+示例主要从3个方面演示：
 
 1. 框架搭建
 2. 服务准备
@@ -82,7 +82,7 @@
 * zookeeper/docker-compose.yml （*为演示方便，这里在单台机器上运行*）：
 	
 ```yaml
-version: '2' //docker-compose版本
+version: '2' #docker-compose版本
 services:
     zoo1:
         image: zookeeper
@@ -319,7 +319,7 @@ docker-compose up -d service_2
 ![](assets/service_registry_case_4_zk.png)
 
 
-### 优化点
+## 优化点
 * 在生产环境中，zk安全连接、节点访问控制都是需要注意的。简单做法，可以把连接地址改成内网IP，添加防火墙策略来限制连接客户端。
 
 * Registrator这里采用的是其多个进程分别连接不同的节点，来防止Registrator的单点故障。由于Registrator所用开销较小，在服务数量与ZK节点数量不大的情况下，不会产生问题。 较好的方式是：Registrator提供失效自动地址切换功能（*目前官方文档好像没有提供此方案，有了解的同学可以留言告诉我*）。
