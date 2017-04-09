@@ -49,15 +49,46 @@
 2. NodeJs 基于Chrome V8 引擎的 JavaScript 语言的运行环境，对于有一定 JavaScript 基础的同学，上手相对简单。
 
 
-*<font color='grey'>所有技术都有其优劣所在，NodeJs 在这里的使用也存在一定的问题（<font color='red'>本文最后会讲述它的高可用策略</font>）：*
+*<font color='grey'>所有技术都有其优劣所在，NodeJs 在这里的使用也存在一定的问题（<font color='red'>本文最后会讲述它的高可用策略</font>）：*</font>
 
 1. NodeJs 是基于单进程单线程的方式，这种方式存在一定的不可靠性。一旦进程崩溃，对应的服务将变得不可用；
 2. 单进程单线程方式，也导致了只能利用单核CPU。为了充分利用计算机资源，还需进行服务的水平扩展；
 
-</font>
+## 代码示例
+
+代码地址： [https://github.com/jasonGeng88/service_registry_discovery](https://github.com/jasonGeng88/service_registry_discovery)
+
+### 依赖
+"express": "~4.15.2",
+"http-proxy": "^1.16.2",
+"loadbalance": "^0.2.7",
+"morgan": "~1.8.1",
+"node-zookeeper-client": "^0.2.2"
+
+### 目录结构
+
+### 功能点具体实现
+
+### 安装与启动
+
+## 场景演示
+
+### 准备工作
+为了方便演示，对原先的服务模块进行调整，提供如下服务：
+
+模块名 | API地址 | 请求方式| 请求参数示例 | 响应结果
+---|---|---|---|---
+service_1|/|GET||This is Service 1.
+service_1|/user|GET|id=1|It's user 1.
+service_2|/|GET||This is Service 2.
+
+* 场景1：GET方式，请求服务1，无请求参数
+* 场景2：GET方式，请求服务1，请求参数为id=1
+* 场景3：GET方式，多次请求服务2，查看负载均衡情况
+* 场景4：启停服务2实例，观察路由表变化
 
 
-## 演示代码
+
 
 ## 高可用
 
