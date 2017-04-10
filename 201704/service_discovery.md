@@ -91,6 +91,9 @@
 * node-zookeeper-client：ZK 客户端，用作获取注册中心服务信息与节点监听；
 
 ### 功能点具体实现
+
+下面会对上面提供的功能点依次进行实现（*展示代码中只保留核心代码，详细请见代码*）
+
 - 服务订阅
 	- 动态获取服务列表
 	- 获取服务节点信息（IP、Port）
@@ -102,6 +105,92 @@
 - 变更通知
 	- 监听服务节点变化
 	- 更新服务路由表
+* discovery.js
+
+* **服务订阅 - 动态获取服务列表（src/middlewares/discovery.js）**
+
+```
+/**
+ * 获取服务列表
+ */
+function getServices(path) {
+    zkClient.getChildren(
+        path,
+        null,
+        function(error, children, stat) {
+            if (error) {
+                console.log(
+                    'Failed to list children of %s due to: %s.',
+                    path,
+                    error
+                );
+                return;
+            }
+
+            // 遍历服务列表，获取服务节点信息
+            children.forEach(function(item) {
+                getService(path + '/' + item);
+            })
+
+        }
+    );
+}
+```
+
+* **服务订阅 - 获取服务节点信息（IP、Port）（src/middlewares/discovery.js）**
+
+```
+/**
+ * 获取服务节点信息（IP,Port）
+ */
+function getService(path) {
+    zkClient.getChildren(
+        path,
+        null,
+        function(error, children, stat) {
+            if (error) {
+                console.log(
+                    'Failed to list children of %s due to: %s.',
+                    path,
+                    error
+                );
+                return;
+            }
+            // 打印节点信息
+            debug('path: ' + path + ', children is ' + children);
+        }
+    );
+}
+```
+
+* **本地缓存 - 缓存服务路由表（src/middlewares/discovery.js）**
+
+```
+// 初始化缓存
+var cache = require('./local-storage');
+cache.setItem(constants.ROUTE_KEY, {});
+                
+/**
+ * 获取服务节点信息（IP,Port）
+ */
+function getService(path) {
+    zkClient.getChildren(
+        ...
+            // 打印节点信息
+            debug('path: ' + path + ', children is ' + children);
+
+            if (children.length > 0) {
+                //设置本地路由缓存
+                cache.getItem(constants.ROUTE_KEY)[path] = children;
+            }
+
+        ...
+    );
+}
+```
+
+
+
 
 ### 安装与启动
 
