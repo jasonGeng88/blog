@@ -6,9 +6,10 @@
  
  
 ## 当前环境
-1. 系统：Mac OS
+1. centos 7
 2. docker 1.12.1
 3. docker-compose 1.8.0
+4. node 6.10.2
 
 ## 前言
 ![](assets/discovery_01.png)
@@ -84,32 +85,61 @@
     }
 }
 ```
-* debug：方便开发调试；
+* debug：用于开发调试；
 * express：作为 NodeJs 的Web应用框架，这里主要用到了它的响应HTTP请求以及路由规则功能；
 * http-proxy：用作反向代理；
 * loadbalance：负载均衡策略，目前提供随机、轮询、权重；
 * node-zookeeper-client：ZK 客户端，用作获取注册中心服务信息与节点监听；
 
+### 常量设置（constants.js）
+
+```
+"use strict";
+
+function define(name, value) {
+    Object.defineProperty(exports, name, {
+        value: value,
+        enumerable: true
+    });
+}
+
+define('ZK_HOSTS', 'localhost:2181,localhost:2182,localhost:2183');
+define('SERVICE_ROOT_PATH', '/services');
+define('ROUTE_KEY', 'services');
+define('SERVICE_NAME', 'service_name');
+define('API_NAME', 'api_name');
+```
+
 ### 功能点具体实现
 
 下面会对上面提供的功能点依次进行实现（*展示代码中只保留核心代码，详细请见代码*）
 
-- 服务订阅
-	- 动态获取服务列表
-	- 获取服务节点信息（IP、Port）
-- 本地缓存
-	- 缓存服务路由表
-- 服务调用
-	- 服务请求的负载均衡策略
-	- 反向代理
-- 变更通知
-	- 监听服务节点变化
-	- 更新服务路由表
-* discovery.js
+* **服务订阅 - 动态获取服务列表**
 
-* **服务订阅 - 动态获取服务列表（src/middlewares/discovery.js）**
+文件路径|操作|方法|备注
+---|---|---|---
+src/middlewares/discovery.js|ADD|connect|连接ZK
+ |ADD|getServices|获取服务列表
+ 
+``` 
+var zookeeper = require('node-zookeeper-client');
+var constants = require('../constants');
+var debug = require('debug')('dev:discovery');
 
-```
+var zkClient = zookeeper.createClient(constants.ZK_HOSTS);
+
+/**
+ * 连接ZK
+ */
+function connect() {
+    zkClient.connect();
+
+    zkClient.once('connected', function() {
+        console.log('Connected to ZooKeeper.');
+        getServices(constants.SERVICE_ROOT_PATH);
+    });
+}
+
 /**
  * 获取服务列表
  */
@@ -137,7 +167,13 @@ function getServices(path) {
 }
 ```
 
-* **服务订阅 - 获取服务节点信息（IP、Port）（src/middlewares/discovery.js）**
+---
+
+* **服务订阅 - 获取服务节点信息（IP、Port）**
+
+文件路径|操作|方法|备注
+---|---|---|---
+src/middlewares/discovery.js|ADD|getService|获取服务节点信息
 
 ```
 /**
@@ -163,7 +199,13 @@ function getService(path) {
 }
 ```
 
-* **本地缓存 - 缓存服务路由表（src/middlewares/discovery.js）**
+---
+
+* **本地缓存 - 缓存服务路由表**
+
+文件路径|操作|方法|备注
+---|---|---|---
+src/middlewares/discovery.js|MODIFY|getService|获取服务节点信息
 
 ```
 // 初始化缓存
@@ -174,25 +216,198 @@ cache.setItem(constants.ROUTE_KEY, {});
  * 获取服务节点信息（IP,Port）
  */
 function getService(path) {
+        ...
+        // 打印节点信息
+        debug('path: ' + path + ', children is ' + children);
+
+        if (children.length > 0) {
+            //设置本地路由缓存
+            cache.getItem(constants.ROUTE_KEY)[path] = children;
+        }
+        ...
+}
+```
+---
+
+* **服务调用 - 负载均衡策略**
+
+文件路径|操作|方法|备注
+---|---|---|---
+src/middlewares/discovery.js|MODIFY|getService|获取服务节点信息
+
+```
+/**
+ * 获取服务节点信息（IP,Port）
+ */
+function getService(path) {
+        ...
+        if (children.length > 0) {
+            //设置负载策略（轮询）
+            cache.getItem(constants.ROUTE_KEY)[path] = loadbalance.roundRobin(children);
+        }
+        ...
+}
+```
+
+*请求的负载均衡，本质是对路由表中请求地址进行记录与分发。记录：上一次请求的地址；分发：按照策略选择接下来请求的地址。这里为了简便起见，将负载与缓存并在一起。*
+
+---
+
+* **服务调用 - 反向代理**
+
+文件路径|操作|方法|备注
+---|---|---|---
+src/routes/reverse-proxy.js|ADD|reverseProxy|反向代理
+
+```
+var proxy = require('http-proxy').createProxyServer({});
+var cache = require('../middlewares/local-storage');
+var constants = require("../constants");
+var debug = require('debug')('dev:reserveProxy');
+
+/**
+ * 根据headers的 service_name 与 api_name 进行代理请求
+ */
+function reverseProxy(req, res, next) {
+    var serviceName = req.headers[constants.SERVICE_NAME];
+    var apiName = req.headers[constants.API_NAME];
+    var serviceNode = constants.SERVICE_ROOT_PATH + '/' + serviceName;
+
+    debug(cache.getItem(constants.ROUTE_KEY)[serviceNode]);
+
+    var host = cache.getItem(constants.ROUTE_KEY)[serviceNode].pick();
+    var url = 'http://' + host + apiName;
+    debug('The proxy url is ' + url);
+    proxy.web(req, res, {
+        target: url
+    });
+}
+```
+
+---
+
+* **变更通知 - 监听服务节点 && 更新路由缓存**
+
+文件路径|操作|方法|备注
+---|---|---|---
+src/middlewares/discovery.js|MODIFY|getServices|获取服务列表
+ |MODIFY|getService|获取服务节点信息
+ 
+```
+/**
+ * 获取服务列表
+ */
+function getServices(path) {
     zkClient.getChildren(
-        ...
-            // 打印节点信息
-            debug('path: ' + path + ', children is ' + children);
+        path,
+        // 监听列表变化
+        function(event) {
+            console.log('Got Services watcher event: %s', event);
+            getServices(constants.SERVICE_ROOT_PATH);
+        },
+        function(error, children, stat) {
+            ...
+        }
+    );
+}
 
-            if (children.length > 0) {
-                //设置本地路由缓存
-                cache.getItem(constants.ROUTE_KEY)[path] = children;
-            }
-
-        ...
+/**
+ * 获取服务节点信息（IP,Port）
+ */
+function getService(path) {
+    zkClient.getChildren(
+        path,
+        // 监听服务节点变化
+        function(event) {
+            console.log('Got Serivce watcher event: %s', event);
+            getService(path);
+        },
+        function(error, children, stat) {
+        	  ...
+        }
     );
 }
 ```
 
+---
+### 主文件 核心内容（src/app.js）
 
+```
+var express = require('express');
+var reverseProxy = require('./routes/reverse-proxy');
+var discovery = require('./middlewares/discovery');
+var app = express();
 
+// service discovery start
+discovery();
 
-### 安装与启动
+// define the home page route
+app.get('/', function(req, res) {
+    res.send('This is a Service Gateway Demo')
+});
+
+// define proxy route
+app.use('/services', reverseProxy);
+```
+
+### 启动脚本（src/bin/www）
+脚本中含有单进程与多进程两种启动方式，由于 NodeJs 单进程的不可靠性，一般生产环境中采用多进程方式启动，保证它的稳定性。
+
+```
+#!/usr/bin/env node
+
+var app = require('../app');
+var http = require('http');
+
+var port = 8080;
+
+//单进程运行
+//http.createServer(app).listen(port);
+
+//多进程运行
+var cluster = require('cluster');
+var numCPUs = require('os').cpus().length;
+
+if (cluster.isMaster) {
+    console.log("master start...");
+
+    // Fork workers.
+    for (var i = 0; i < numCPUs; i++) {
+        cluster.fork();
+    }
+
+    cluster.on('listening',function(worker,address){
+        console.log('listening: worker ' + worker.process.pid +', Address: '+address.address+":"+address.port);
+    });
+
+    cluster.on('exit', function(worker, code, signal) {
+        console.log('worker ' + worker.process.pid + ' died');
+        cluster.fork();
+    });
+} else if (cluster.isWorker) {
+    http.createServer(app).listen(port);
+}
+```
+
+### 镜像构建
+
+```
+# Dockerfile
+FROM node:6.10.2
+MAINTAINER jasongeng88@gmail.com
+ENV TZ="Asia/Shanghai" HOME="/usr/src/app"
+WORKDIR ${HOME}
+COPY src/ ${HOME}/
+RUN npm install
+EXPOSE 8080
+ENTRYPOINT ["node", "./bin/www"]
+```
+
+```
+# 构建命令
+docker build -t node_discovery .
+```
+
 
 ## 场景演示
 
@@ -212,14 +427,12 @@ service_2|/|GET||This is Service 2.
 
 
 
-
 ## 高可用
 
-1. NodeJs 重启机制
-2. 分布式部署
+1. NodeJs 自身通过 cluster 模块，进行多进程启动，防止单进程崩溃的不稳定性；
+2. 通过 Docker 容器化启动，在启动时设置restart策略，一旦服务崩溃将立即重启；
+2. 上述的使用场景都在单机上运行，在分布式情况下，可以将 NodeJs 容器多主机部署，采用 nginx + NodeJs 的架构进行水平扩展；
 
-## 优化点
-1. 调用链过深
 
 ## 总结
 
