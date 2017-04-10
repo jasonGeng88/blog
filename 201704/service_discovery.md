@@ -11,7 +11,7 @@
 3. docker-compose 1.8.0
 
 ## 前言
-![](assets/service_discovery_01.png)
+![](assets/discovery_01.png)
 
 基于上一篇的 [“基于Docker、Registrator、Zookeeper实现的服务自动注册”](https://github.com/jasonGeng88/blog/blob/master/201703/service_registry.md)，完成了 “服务注册与发现” 的上半部分（即上图中的1）。本文就来讲讲图中的2、3、4、5 分别是如何实现的。
 
@@ -34,7 +34,7 @@
 
 这里采用服务端发现机制，即服务网关（*切记：服务网关的作用不仅仅是服务发现*）。
 
-![](assets/service_discovery_02.png)
+![](assets/discovery_02.png)
 
 与客户端发现相比，可见的优势有：
 
@@ -58,16 +58,50 @@
 
 代码地址： [https://github.com/jasonGeng88/service_registry_discovery](https://github.com/jasonGeng88/service_registry_discovery)
 
-### 依赖
-"express": "~4.15.2",
-"http-proxy": "^1.16.2",
-"loadbalance": "^0.2.7",
-"morgan": "~1.8.1",
-"node-zookeeper-client": "^0.2.2"
+### 代码目录
+![](assets/discovery_code_01.png)
 
-### 目录结构
+*本文主要介绍服务发现相关实现，其他部分已在上篇中介绍过，感兴趣的同学去回顾下。*
+
+### 目录结构（discovery项目）
+![](assets/discovery_code_02.png)
+
+### 依赖配置（package.json）
+```
+{
+    "name": "service-discovery",
+    "version": "0.0.0",
+    "private": true,
+    "scripts": {
+        "start": "node ./bin/www"
+    },
+    "dependencies": {
+        "debug": "~2.6.3",
+        "express": "~4.15.2",
+        "http-proxy": "^1.16.2",
+        "loadbalance": "^0.2.7",
+        "node-zookeeper-client": "^0.2.2"
+    }
+}
+```
+* debug：方便开发调试；
+* express：作为 NodeJs 的Web应用框架，这里主要用到了它的响应HTTP请求以及路由规则功能；
+* http-proxy：用作反向代理；
+* loadbalance：负载均衡策略，目前提供随机、轮询、权重；
+* node-zookeeper-client：ZK 客户端，用作获取注册中心服务信息与节点监听；
 
 ### 功能点具体实现
+- 服务订阅
+	- 动态获取服务列表
+	- 获取服务节点信息（IP、Port）
+- 本地缓存
+	- 缓存服务路由表
+- 服务调用
+	- 服务请求的负载均衡策略
+	- 反向代理
+- 变更通知
+	- 监听服务节点变化
+	- 更新服务路由表
 
 ### 安装与启动
 
