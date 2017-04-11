@@ -74,7 +74,8 @@
     "version": "0.0.0",
     "private": true,
     "scripts": {
-        "start": "node ./bin/www"
+        "start": "node ./bin/www",
+        "debug": "DEBUG=dev:* node ./bin/www"
     },
     "dependencies": {
         "debug": "~2.6.3",
@@ -103,7 +104,7 @@ function define(name, value) {
     });
 }
 
-define('ZK_HOSTS', 'localhost:2181,localhost:2182,localhost:2183');
+define('ZK_HOSTS', '${PRIVATE_IP}:2181,${PRIVATE_IP}:2182,${PRIVATE_IP}:2183');
 define('SERVICE_ROOT_PATH', '/services');
 define('ROUTE_KEY', 'services');
 define('SERVICE_NAME', 'service_name');
@@ -390,6 +391,7 @@ if (cluster.isMaster) {
 ```
 
 ### 镜像构建
+*为演示方便，采用单进程方式*
 
 ```
 # Dockerfile
@@ -400,7 +402,6 @@ WORKDIR ${HOME}
 COPY src/ ${HOME}/
 RUN npm install
 EXPOSE 8080
-ENTRYPOINT ["node", "./bin/www"]
 ```
 
 ```
@@ -411,6 +412,13 @@ docker build -t node_discovery .
 
 ## 场景演示
 
+### 改动
+
+*坑：由于 docker --net=host 在 Mac 上存在问题，所以对 Registrator 做出调整。原先向注册中心注册的是 127.0.0.1 改为 内网IP，保证容器内可以访问。*
+
+*Linux 环境下不需要此改动，服务网关网络模式应为host。*
+
+
 ### 准备工作
 为了方便演示，对原先的服务模块进行调整，提供如下服务：
 
@@ -420,10 +428,49 @@ service_1|/|GET||This is Service 1.
 service_1|/user|GET|id=1|It's user 1.
 service_2|/|GET||This is Service 2.
 
-* 场景1：GET方式，请求服务1，无请求参数
-* 场景2：GET方式，请求服务1，请求参数为id=1
-* 场景3：GET方式，多次请求服务2，查看负载均衡情况
-* 场景4：启停服务2实例，观察路由表变化
+服务模块启动如下（service_1：2个，service_2：1个）
+
+![](assets/discovery_demo_01.png)
+
+### 启动服务网关
+
+```
+cd discovery && docker-compose up -d
+```
+
+输出效果（docker logs -f discovery_discovery_1 看出日志输出）：
+
+![](assets/discovery_demo_02.png)
+
+* **场景1：GET方式，请求服务2，API路径为 / ，无请求参数**
+
+![](assets/discovery_demo_03.png)
+
+---
+
+* **场景2：GET方式，请求服务1，API路径为 /user ，请求参数为id=1**
+
+![](assets/discovery_demo_04.png)
+
+---
+
+* **场景3：GET方式，多次请求服务1，API路径为 / ，查看负载均衡情况**
+
+![](assets/discovery_demo_05.png)
+---
+
+* **场景4：启停服务2实例，观察路由表变化**
+
+```
+// 停用 serivce_2
+cd services && docker-compose stop service_2
+```
+
+查看网关监听变化：
+
+![](assets/discovery_demo_06.png)
+
+---
 
 
 
