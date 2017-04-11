@@ -6,7 +6,7 @@
  
  
 ## 当前环境
-1. centos 7
+1. Mac OS 10.11.x
 2. docker 1.12.1
 3. docker-compose 1.8.0
 4. node 6.10.2
@@ -33,7 +33,7 @@
 ### 服务发现方式
 关于服务发现的方式，主要分为两种方式：客户端发现与服务端发现。它们的主要区别为：前者是由调用者本身去调用服务，后者是将调用者请求统一指向类似服务网关的服务，由服务网关代为调用。
 
-这里采用服务端发现机制，即服务网关（*切记：服务网关的作用不仅仅是服务发现*）。
+这里采用服务端发现机制，即服务网关（*注意：服务网关的作用不仅仅是服务发现*）。
 
 ![](assets/discovery_02.png)
 
@@ -62,7 +62,7 @@
 ### 代码目录
 ![](assets/discovery_code_01.png)
 
-*本文主要介绍服务发现相关实现，其他部分已在上篇中介绍过，感兴趣的同学去回顾下。*
+*本文主要介绍服务发现相关实现，其他部分已在上篇中介绍过，感兴趣的同学可查看上篇。*
 
 ### 目录结构（discovery项目）
 ![](assets/discovery_code_02.png)
@@ -74,8 +74,7 @@
     "version": "0.0.0",
     "private": true,
     "scripts": {
-        "start": "node ./bin/www",
-        "debug": "DEBUG=dev:* node ./bin/www"
+        "start": "node ./bin/www"
     },
     "dependencies": {
         "debug": "~2.6.3",
@@ -120,7 +119,7 @@ define('API_NAME', 'api_name');
 文件路径|操作|方法|备注
 ---|---|---|---
 src/middlewares/discovery.js|ADD|connect|连接ZK
- |ADD|getServices|获取服务列表
+- |ADD|getServices|获取服务列表
  
 ``` 
 var zookeeper = require('node-zookeeper-client');
@@ -292,7 +291,7 @@ function reverseProxy(req, res, next) {
 文件路径|操作|方法|备注
 ---|---|---|---
 src/middlewares/discovery.js|MODIFY|getServices|获取服务列表
- |MODIFY|getService|获取服务节点信息
+- |MODIFY|getService|获取服务节点信息
  
 ```
 /**
@@ -331,7 +330,7 @@ function getService(path) {
 ```
 
 ---
-### 主文件 核心内容（src/app.js）
+### 主文件（src/app.js）
 
 ```
 var express = require('express');
@@ -402,6 +401,7 @@ WORKDIR ${HOME}
 COPY src/ ${HOME}/
 RUN npm install
 EXPOSE 8080
+ENTRYPOINT ["npm", "run", "start"]
 ```
 
 ```
@@ -482,6 +482,10 @@ cd services && docker-compose stop service_2
 
 
 ## 总结
+
+本文以上篇 “服务自动化注册” 遗留的功能点开头，讲述了服务发现的2种实现方式，以及其优劣。并以 NodeJs 作为服务网关的实现手段，详细介绍了其中各功能点的实现细节。最后通过场景代入的方式，展示了其效果。
+
+文中也提到，服务发现实则只是服务网关的一个部分，服务网关还包括服务鉴权、访问控制等。这里的代码仅是个Demo示例，目的是让大家更好的看清它的本质，希望对大家有所帮助~
 
 
 
