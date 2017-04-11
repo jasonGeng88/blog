@@ -119,7 +119,7 @@ define('API_NAME', 'api_name');
 文件路径|操作|方法|备注
 ---|---|---|---
 src/middlewares/discovery.js|ADD|connect|连接ZK
-- |ADD|getServices|获取服务列表
+同上|ADD|getServices|获取服务列表
  
 ``` 
 var zookeeper = require('node-zookeeper-client');
@@ -291,7 +291,7 @@ function reverseProxy(req, res, next) {
 文件路径|操作|方法|备注
 ---|---|---|---
 src/middlewares/discovery.js|MODIFY|getServices|获取服务列表
-- |MODIFY|getService|获取服务节点信息
+同上|MODIFY|getService|获取服务节点信息
  
 ```
 /**
