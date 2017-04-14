@@ -119,7 +119,7 @@ define('API_NAME', 'api_name');
 文件路径|操作|方法|备注
 ---|---|---|---
 src/middlewares/discovery.js|ADD|connect|连接ZK
-- |ADD|getServices|获取服务列表
+同上|ADD|getServices|获取服务列表
  
 ``` 
 var zookeeper = require('node-zookeeper-client');
@@ -291,7 +291,7 @@ function reverseProxy(req, res, next) {
 文件路径|操作|方法|备注
 ---|---|---|---
 src/middlewares/discovery.js|MODIFY|getServices|获取服务列表
-- |MODIFY|getService|获取服务节点信息
+同上|MODIFY|getService|获取服务节点信息
  
 ```
 /**
@@ -484,6 +484,8 @@ cd services && docker-compose stop service_2
 ## 总结
 
 本文以上篇 “服务自动化注册” 遗留的功能点开头，讲述了服务发现的2种实现方式，以及其优劣。并以 NodeJs 作为服务网关的实现手段，详细介绍了其中各功能点的实现细节。最后通过场景代入的方式，展示了其效果。
+
+对于网关的高可用，也通过了2种方式进行了保证。自身高可用通过多进程、失败重启策略进行保证；分布式下则以 nginx + NodeJs 的架构进行了保证。
 
 文中也提到，服务发现实则只是服务网关的一个部分，服务网关还包括服务鉴权、访问控制等。这里的代码仅是个Demo示例，目的是让大家更好的看清它的本质，希望对大家有所帮助~
 
