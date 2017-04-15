@@ -16,3 +16,5 @@
 	* [基于 Docker、Registrator、Zookeeper 实现的服务自动注册](https://github.com/jasonGeng88/blog/blob/master/201703/service_registry.md)
 
 	* [基于 Docker、NodeJs 实现高可用的服务发现](https://github.com/jasonGeng88/blog/blob/master/201704/service_discovery.md)
+
+	* [看 Docker Swarm 如何做集群](https://github.com/jasonGeng88/blog/blob/master/201704/service_swarm.md)
