@@ -18,3 +18,6 @@
 	* [基于 Docker、NodeJs 实现高可用的服务发现](https://github.com/jasonGeng88/blog/blob/master/201704/service_discovery.md)
 
 	* [看 Docker Swarm 如何做集群](https://github.com/jasonGeng88/blog/blob/master/201704/docker_swarm.md)
+
+* 运维系列
+	* [Elasticsearch 集群配置与容器化部署](https://github.com/jasonGeng88/blog/blob/master/201704/es_cluster.md)
