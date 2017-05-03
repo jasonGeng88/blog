@@ -19,5 +19,9 @@
 
 	* [看 Docker Swarm 如何做集群](https://github.com/jasonGeng88/blog/blob/master/201704/docker_swarm.md)
 
+* JAVA
+	* [JAVA中最简单的分布式调用 RMI](https://github.com/jasonGeng88/blog/blob/master/201704/rmi.md)
+	
+
 * 运维系列
 	* [Elasticsearch 集群配置与容器化部署](https://github.com/jasonGeng88/blog/blob/master/201704/es_cluster.md)
