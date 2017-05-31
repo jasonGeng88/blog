@@ -39,11 +39,18 @@
 maven 依赖：
 
 ```xml
-<dependency>
+<parent>
 	<groupId>org.springframework.boot</groupId>
-	<artifactId>spring-boot-starter-activemq</artifactId>
+	<artifactId>spring-boot-starter-parent</artifactId>
 	<version>1.5.3.RELEASE</version>
-</dependency>
+</parent>
+
+<dependencies>
+	<dependency>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-activemq</artifactId>
+	</dependency>
+</dependencies>
 ```
 
 创建 ActiveMQ 连接工厂：
@@ -172,13 +179,186 @@ docker run -d -p 8161:8161 -p 61616:61616 --name activemq webcenter/activemq
 
 ---
 
-### 点对点模式
+### 点对点模式（单消费者）
+
+下面介绍消息队列中最常用的一种场景，即点对点模式。基本概念如下：
+
+1. 每个消息只能被一个消费者（Consumer）进行消费。一旦消息被消费后，就不再在消息队列中存在。
+2. 发送者和接收者之间在时间上没有依赖性，也就是说当发送者发送了消息之后，不管接收者有没有正在运行，它不会影响到消息被发送到队列。
+3. 接收者在成功接收消息之后需向队列应答成功。
 
 ![](assets/jms_01.png)
 
-### 点对点（多消费者）
+#### 代码实现（为简化代码，部分代码沿用上面所述）：
+
+* 启动文件（Application.java）
+
+```java
+@SpringBootApplication
+@EnableJms
+public class Application {
+
+    ...
+
+    /**
+     * JMS 队列的模板类
+     * connectionFactory() 为 ActiveMQ 连接工厂
+     */
+    @Bean
+    public JmsTemplate jmsQueueTemplate(){
+        return new JmsTemplate(connectionFactory());
+    }
+
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+
+}
+```
+
+注解```@EnableJms```设置在```@Configuration```类上，用来声明对 JMS 注解的支持。
+
+* 消息生产者（PtpProducer.java）
+
+```java
+@Component
+public class PtpProducer {
+
+    @Autowired
+    private JmsTemplate jmsQueueTemplate;
+
+    /**
+     * 发送消息自动转换成原始消息
+     */
+    public void convertAndSend(){
+        jmsQueueTemplate.convertAndSend("ptp", "我是自动转换的消息");
+    }
+}
+```
+
+* 生产者调用类（PtpController.java）
+
+```java
+@RestController
+@RequestMapping(value = "/ptp")
+public class PtpController {
+
+    @Autowired
+    private PtpProducer ptpProducer;
+
+    @RequestMapping(value = "/convertAndSend")
+    public Object convertAndSend(){
+        ptpProducer.convertAndSend();
+        return "success";
+    }
+
+}
+```
+
+* 消息监听容器工厂
+
+```java
+@SpringBootApplication
+@EnableJms
+public class Application {
+
+	...
+
+    /**
+     * JMS 队列的监听容器工厂
+     */
+    @Bean(name = "jmsQueueListenerCF")
+    public DefaultJmsListenerContainerFactory jmsQueueListenerContainerFactory() {
+        DefaultJmsListenerContainerFactory factory =
+                new DefaultJmsListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory());
+        //设置连接数
+        factory.setConcurrency("3-10");
+        //重连间隔时间
+        factory.setRecoveryInterval(1000L);
+        return factory;
+    }
+
+   ...
+   
+}
+```
+
+* 消息监听器
+
+```java
+@Component
+public class PtpListener1 {
+
+    /**
+     * 消息队列监听器
+     * destination 队列地址
+     * containerFactory 监听器容器工厂, 若存在2个以上的监听容器工厂,需进行指定
+     */
+    @JmsListener(destination = "ptp", containerFactory = "jmsQueueListenerCF")
+    public void receive(String msg){
+    
+        System.out.println("点对点模式1: " + msg);
+        
+    }
+}
+```
+
+#### 演示
+
+启动项目启动后，通过 REST 接口的方式来调用消息生产者发送消息，请求如下：
+
+```
+curl -XGET 127.0.0.1:8080/ptp/convertAndSend
+```
+
+消费者控制台信息：
+
+![](assets/jms_ptp_01.png)
+
+ActiveMQ 控制台信息：
+
+![](assets/jms_ptp_02.png)
+
+列表说明：
+
+* Name：队列名称。
+* Number Of Pending Messages：等待消费的消息个数。
+* Number Of Consumers：当前连接的消费者数目，因为我们采用的是连接池的方式连接，初始连接数为 3，所以显示数字为 3。
+* Messages Enqueued：进入队列的消息总个数，包括出队列的和待消费的，这个数量只增不减。
+* Messages Dequeued：出了队列的消息，可以理解为是已经消费的消息数量。
+
+
+### 点对点模式（多消费者）
+
+基于上面一个消费者消费的模式，因为生产者可能会有很多，同时像某个队列发送消息，这时一个消费者可能会成为瓶颈。所以需要多个消费者来分摊消费压力（*消费线程池能解决一定压力，但毕竟在单机上，做不到分布式分布，所以多消费者是有必要的*），也就产生了下面的场景。
 
 ![](assets/jms_02.png)
+
+#### 代码实现
+
+* 添加新的监听器
+
+```java
+@Component
+public class PtpListener2 {
+
+    @JmsListener(destination = Constant.QUEUE_NAME, containerFactory = "jmsQueueListenerCF")
+    public void receive(String msg){
+    
+        System.out.println("点对点模式2: " + msg);
+        
+    }
+}
+```
+
+#### 演示
+
+这里我们发起 10 次请求，来观察消费者的消费情况：
+
+![](assets/jms_ptp_03.png)
+
+*这里因为监听容器设置了线程池的缘故，在实际消费过程中，监听器消费的顺序会有所差异。*
 
 
 ### 发布订阅模式
