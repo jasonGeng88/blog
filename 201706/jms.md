@@ -1,4 +1,4 @@
-# JMS 在 SpringBoot 的使用
+# JMS 在 SpringBoot 中的使用
 > 摘要：本文属于原创，欢迎转载，转载请保留出处：[https://github.com/jasonGeng88/blog](https://github.com/jasonGeng88/blog)
 > 本文所有服务均采用docker容器化方式部署
 
