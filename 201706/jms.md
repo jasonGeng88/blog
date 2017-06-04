@@ -1,4 +1,4 @@
-# SpringBoot 集成 JMS 下的各种使用场景
+# JMS 在 SpringBoot 的使用
 > 摘要：本文属于原创，欢迎转载，转载请保留出处：[https://github.com/jasonGeng88/blog](https://github.com/jasonGeng88/blog)
 > 本文所有服务均采用docker容器化方式部署
 
@@ -12,24 +12,17 @@
 ## 前言
 基于之前一篇[“一个故事告诉你什么是消息队列”](https://github.com/jasonGeng88/blog/blob/master/201705/MQ.md)，了解了消息队列的使用场景以及相关的特性。本文主要讲述消息服务在 JAVA 中的使用。
 
-市面上的有关消息队列的技术选型非常多，如果我们的框架代码要支持不同的消息实现，在保证框架具有较高扩展性的前提下，我们势必要进行一定的封装。
+市面上的有关消息队列的技术选型非常多，如果我们的代码框架要支持不同的消息实现，在保证框架具有较高扩展性的前提下，我们势必要进行一定的封装。
 
-如果你使用 JAVA 开发，那大可不必如此。因为在 JAVA 中，已经定义了一套标准的 JMS 规范。该规范定义了一套通用的接口和相关语义，提供了诸如持久、验证和事务的消息服务，其最主要的目的是允许Java应用程序访问现有的消息中间件。就和 JDBC 一样。
-
-<!--下面会默认你对的 SpringBoot 与 JMS 有一定的了解，我会直接以使用场景来介绍 JMS 的使用，代码上会尽可能详细的注释，并且在每个场景后，都会给予一定的解释，既然我的一些理解，同时也希望？？
-
-***SpringBoot：快速、敏捷地开发新一代基于Spring框架的应用程序***-->
-
-
-
+在 JAVA 中，大可不必如此。因为 JAVA 已经制定了一套标准的 JMS 规范。该规范定义了一套通用的接口和相关语义，提供了诸如持久、验证和事务的消息服务，其最主要的目的是允许Java应用程序访问现有的消息中间件。就和 JDBC 一样。
 
 
 ## 基本概念
 在介绍具体的使用之前，先简单介绍一下 JMS 的一些基本知识。这里我打算分为 3 部分来介绍，即 消息队列（MQ）的连接、消息发送与消息接收。
 
-***这里我们的框架采用的是 SpringBoot、JMS、ActiveMQ***
+***这里我们的技术选型是 SpringBoot、JMS、ActiveMQ***
 
-*这里没有使用 SpringBoot 零配置来搭建项目，因为它不利于我们理解概念。实际项目中推荐使用*
+*为了更好的理解 JMS，这里没有使用 SpringBoot 零配置来搭建项目*
 
 ### MQ 的连接
 使用 MQ 的第一步一定是先连接 MQ。因为这里使用的是 JMS 规范，对于任何遵守 JMS 规范的 MQ 来说，都会实现相应的```ConnectionFactory```接口，因此我们只需要创建一个```ConnectionFactory```工厂类，由它来实现 MQ 的连接，以及封装一系列特性的 MQ 参数。
@@ -162,6 +155,8 @@ public DefaultJmsListenerContainerFactory jmsQueueListenerContainerFactory() {
 ```
 
 ## 场景
+
+代码地址：[https://github.com/jasonGeng88/springboot-jms](https://github.com/jasonGeng88/springboot-jms)
 
 对 JMS 有了基本的理解后，我们就来在具体的场景中使用一下。
 
@@ -363,11 +358,137 @@ public class PtpListener2 {
 
 ### 发布订阅模式
 
+除了点对点模式，发布订阅模式也是消息队列中常见的一种使用。试想一下，有一个即时聊天群，你在群里发送一条消息。所有在这个群里的人（即订阅了该群的人），都会收到你发送的信息。
+
+基本概念：
+
+1. 每个消息可以有多个消费者。
+2. 发布者和订阅者之间有时间上的依赖性。针对某个主题（Topic）的订阅者，它必须创建一个订阅者之后，才能消费发布者的消息。
+3. 为了消费消息，订阅者必须保持运行的状态。
+
 ![](assets/jms_03.png)
 
+#### 代码实现
 
-### 发布订阅（持久化）
+* 修改 JmsTemplate 模板类，使其支持发布订阅功能
 
-### 本地事务
+```java
+@SpringBootApplication
+@EnableJms
+public class Application {
 
-### 外部事务
+    ...
+
+    @Bean
+    public JmsTemplate jmsTopicTemplate(){
+        JmsTemplate jmsTemplate = new JmsTemplate(connectionFactory());
+        jmsTemplate.setPubSubDomain(true);
+        return jmsTemplate;
+    }
+    
+    ...
+
+}
+```
+
+* 消息生产者（PubSubProducer.java）
+
+```java
+@Component
+public class PtpProducer {
+
+    @Autowired
+    private JmsTemplate jmsTopicTemplate;
+
+    public void convertAndSend(){
+		jmsTopicTemplate.convertAndSend("topic", "我是自动转换的消息");
+    }
+}
+```
+
+* 生产者调用类（PubSubController.java）
+
+```java
+@RestController
+@RequestMapping(value = "/pubsub")
+public class PtpController {
+
+    @Autowired
+    private PubSubProducer pubSubProducer;
+
+    @RequestMapping(value = "/convertAndSend")
+    public String convertAndSend(){
+        pubSubProducer.convertAndSend();
+        return "success";
+    }
+
+}
+```
+
+* 修改 DefaultJmsListenerContainerFactory 类，使其支持发布订阅功能
+
+```java
+@SpringBootApplication
+@EnableJms
+public class Application {
+
+	...
+
+    /**
+     * JMS 队列的监听容器工厂
+     */
+    @Bean(name = "jmsTopicListenerCF")
+    public DefaultJmsListenerContainerFactory jmsTopicListenerContainerFactory() {
+        DefaultJmsListenerContainerFactory factory =
+                new DefaultJmsListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory());
+        factory.setConcurrency("1");
+        factory.setPubSubDomain(true);
+        return factory;
+    }
+
+   ...
+   
+}
+```
+
+* 消息监听器（这里设置2个订阅者）
+
+```java
+@Component
+public class PubSubListener1 {
+
+    @JmsListener(destination = "topic", containerFactory = "jmsTopicListenerCF")
+    public void receive(String msg){
+        System.out.println("订阅者1 - " + msg);
+    }
+}
+
+@Component
+public class PubSubListener2 {
+
+    @JmsListener(destination = "topic", containerFactory = "jmsTopicListenerCF")
+    public void receive(String msg){
+        System.out.println("订阅者2 - " + msg);
+    }
+}
+```
+
+#### 演示
+
+```
+curl -XGET 127.0.0.1:8080/pubSub/convertAndSend
+```
+
+消费者控制台信息：
+
+![](assets/jms_pubsub_01.png)
+
+ActiveMQ 控制台信息：
+
+![](assets/jms_pubsub_02.png)
+
+
+## 总结
+
+这里只是对 SpringBoot 与 JMS 集成的简单说明与使用，详细的介绍可以查看 Spring 的官方文档，我这里也有幸参与 并发编程网 发起的 Spring 5 的翻译工作，我主要翻译了 [Spring 5 的 JMS 章节](http://ifeve.com/spring-5-26-jms-java-message-service/)，其内容对于上述 JMS 的基本概念，都有详细的展开说明，有兴趣的可以看一下，当然翻译水平有限，英文好的建议看原文。
