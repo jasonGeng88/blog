@@ -1,4 +1,4 @@
-# [译] 基于事件构建的服务
+# [译] 基于事件流构建的服务
 
 > 摘要：本文属于原创，欢迎转载，转载请保留出处：[https://github.com/jasonGeng88/blog](https://github.com/jasonGeng88/blog)
 
