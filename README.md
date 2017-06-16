@@ -36,3 +36,6 @@
 * 运维系列
 	* [Elasticsearch 集群配置与容器化部署](https://github.com/jasonGeng88/blog/blob/master/201704/es_cluster.md)
 	* [我们为什么要用 HTTPS](https://github.com/jasonGeng88/blog/blob/master/201705/https.md)
+
+* 搜索
+	* [一步步实现 Redis 搜索引擎](https://github.com/jasonGeng88/blog/blob/master/201706/redis-search.md)
