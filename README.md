@@ -25,6 +25,8 @@
 
 	* [[译] 基于事件流构建的服务](https://github.com/jasonGeng88/blog/blob/master/201706/event.md)
 
+	* [带着问题学 Kubernetes 架构图](https://github.com/jasonGeng88/blog/blob/master/201707/k8s-architecture.md)
+
 * 编程
 	* [[译] 2017年你应该了解的函数式编程](https://github.com/jasonGeng88/blog/blob/master/201705/functional_programming.md)
 	* [[译] REST API URI 设计的七准则](https://github.com/jasonGeng88/blog/blob/master/201706/rest-api.md) 
