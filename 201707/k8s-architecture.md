@@ -1,4 +1,4 @@
-# 带着问题学 Kubernetes 架构图
+# 带着问题学 Kubernetes 架构
 > 摘要：本文属于原创，欢迎转载，转载请保留出处：[https://github.com/jasonGeng88/blog](https://github.com/jasonGeng88/blog)
  
 打开这篇文章的同学，想必对 docker 都不会陌生。docker 是一种虚拟容器技术，它上手比较简单，只需在宿主机上起一个 docker engine，然后就能愉快的玩耍了，如：拉镜像、起容器、挂载数据、映射端口等等。相对于 Kubernetes（K8S）的上手，可谓简单很多。
