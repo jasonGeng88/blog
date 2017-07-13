@@ -29,7 +29,7 @@
 
 	* [带着问题学 Kubernetes 架构图](https://github.com/jasonGeng88/blog/blob/master/201707/k8s-architecture.md)
 	 
-	* [带着问题学 Kubernetes 基本单元 Pod](https://github.com/jasonGeng88/blog/blob/master/201707/k8s-pod)
+	* [带着问题学 Kubernetes 基本单元 Pod](https://github.com/jasonGeng88/blog/blob/master/201707/k8s-pod.md)
 
 * 编程
 	* [[译] 2017年你应该了解的函数式编程](https://github.com/jasonGeng88/blog/blob/master/201705/functional_programming.md)
