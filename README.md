@@ -31,6 +31,8 @@
 	 
 	* [带着问题学 Kubernetes 基本单元 Pod](https://github.com/jasonGeng88/blog/blob/master/201707/k8s-pod.md)
 
+	* [带着问题学 Kubernetes 抽象对象 Service](https://github.com/jasonGeng88/blog/blob/master/201707/k8s-service.md)
+
 * 编程
 	* [[译] 2017年你应该了解的函数式编程](https://github.com/jasonGeng88/blog/blob/master/201705/functional_programming.md)
 	* [[译] REST API URI 设计的七准则](https://github.com/jasonGeng88/blog/blob/master/201706/rest-api.md) 
