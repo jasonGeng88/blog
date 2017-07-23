@@ -34,7 +34,7 @@
 * 文件名：deploy-echoserver.yml （*这里以 Deployment 的方式来创建与管理 Pod*）
 * 文件内容：
 
-```
+```yaml
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
@@ -84,7 +84,7 @@ kubectl create -f deploy-echoserver.yml
 
 Service 创建脚本内容如下（*service-echoserver.yml*）：
 
-```
+```yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -139,7 +139,7 @@ kubectl create -f service-echoserver.yml
 
 我们在手动把 Endpoints 创建回来，创建脚本如下（*endpoint-echoserver.yml*）：
 
-```
+```yaml
 apiVersion: v1
 kind: Endpoints
 metadata:
@@ -267,7 +267,7 @@ busybox 中 环境变量如下：
 
 修改 Service 配置文件，并重新启动：
 
-```
+```yaml
 apiVersion: v1
 kind: Service
 metadata:
