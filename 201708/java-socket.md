@@ -7,28 +7,16 @@
 
 ## 知识点
 * socket 的连接处理
-* 输入、输出流的处理
+* IO 输入、输出流的处理
+* 请求数据格式处理
 * 请求模型优化
-
-## 背景
-
-先来看张图，有用过 RPC 的同学，应该对下面这张图都比较熟悉。
-
--- 图一
-
-*这里仅以同构系统的 JAVA 通信为例。*
-
-客户端通过调用本地的对象方法（即存根），来访问服务端对应的远程方法（即服务接口的具体实现）。这中间涉及了很多的知识点，以 JAVA 来说，有对 socket 的处理，通信的同步与异步的不同实现，数据传输的序列化与反序列化，服务调用与定位所用到的反射机制与动态代理等。
-
-我后面打算针对上述的几块，一步步自建一个简易的 RPC 框架。
 
 ## 场景
 
-今天，先和大家聊一下 JAVA 中的 socket 通信问题。这里采用最简单的一请求一响应模型为例，假设客户端需要与10个站点进行通信，我们该如何实现这个客户端。
+今天，和大家聊一下 JAVA 中的 socket 通信问题。这里采用最简单的一请求一响应模型为例，假设我们现在需要向 baidu 站点进行通信。我们用 JAVA 原生的 socket 该如何实现。
 
-首先，先来看看用 JAVA 中原生的 socket 是如何实现的。
-
-* 首先，我们需要建立 socket 连接（*核心代码*）
+### 建立 socket 连接
+首先，我们需要建立 socket 连接（*核心代码*）
 
 ```java
 import java.net.InetSocketAddress;
@@ -44,9 +32,12 @@ socket.connect(remote);
 
 ```
 
-* 连接成功后，我们就能获得 socket 的输入输出流，下面我们就该对该连接发起数据请求了。
+### 处理 socket 输入输出流
+成功建立 socket 连接后，我们就能获得它的输入输出流，通信的本质是对输入输出流的处理。通过输入流，读取网络连接上传来的数据，通过输出流，将本地的数据传出给远端。
 
-*socket 连接本质就是 io 处理，与文件流有点类似。所以也有对应的输入流与输出流。获取输入、输出流代码如下：*
+*socket 连接实际与处理文件流有点类似，都是在进行 IO 操作。*
+
+获取输入、输出流代码如下：
 
 ```java
 // 输入流
@@ -55,9 +46,9 @@ InputStream in = socket.getInputStream();
 OutputStream out = socket.getOutputStream();
 ```
 
-关于 io 流的处理，我们一般会用相应的包装类来处理 io 流，如果直接处理的话，我们需要对 byte[] 进行操作，而这是相对比较繁琐的。如果采用包装类，我们可以直接以 string、int 等类型进行处理，简化了 io 字节操作。
+关于 IO 流的处理，我们一般会用相应的包装类来处理 IO 流，如果直接处理的话，我们需要对 ```byte[]``` 进行操作，而这是相对比较繁琐的。如果采用包装类，我们可以直接以```string```、```int```等类型进行处理，简化了 IO 字节操作。
 
-下面以 BufferedReader 与 PrintWriter 作为输入输出的包装类进行处理。
+下面以 ```BufferedReader``` 与 ```PrintWriter``` 作为输入输出的包装类进行处理。
 
 ```java
 // 获取 socket 输入流
@@ -74,9 +65,13 @@ private PrintWriter getWriter(Socket socket) throws IOException {
 
 ```
 
-* 有了 socket 连接、输入与输出流，下面就该向发送请求数据，以及获取请求的响应结果。
+### 数据请求与响应
 
-有了 io 包装类的支持，我们可以直接以字符串的格式进行传输。我们以访问 baidu 站点为例，进行请求的响应与接收。
+有了 socket 连接、IO 输入输出流，下面就该向发送请求数据，以及获取请求的响应结果。
+
+因为有了 IO 包装类的支持，我们可以直接以字符串的格式进行传输，由包装类帮我们将数据装换成相应的字节流。
+
+因为我们与 baidu 站点进行的是 HTTP 访问，所有我们不需要额外定义输出格式。采用标准的 HTTP 传输格式，就能进行请求响应了（*某些特定的 RPC 框架，可能会有自定义的通信格式*）。
 
 请求的数据内容处理如下：
 
@@ -114,7 +109,9 @@ while ((msg = reader.readLine()) != null){
 }
 ```
 
-* 至此，讲完了原生 socket 下的创建连接、发送请求与接收响应的所有核心代码。
+### 结果展示
+
+至此，讲完了原生 socket 下的创建连接、发送请求与接收响应的所有核心代码。
 
 完整代码如下：
 
@@ -176,7 +173,7 @@ public class SocketHttpClient {
 }
 ```
 
-* 下面，我们通过实例化一个客户端，来进行 socket 通信。
+下面，我们通过实例化一个客户端，来展示 socket 通信的结果。
 
 ```java
 public class Application {
@@ -194,21 +191,22 @@ public class Application {
 ![](assets/java-socket-01.png)
 
 ## 请求模型优化
-这种方式，虽然实现功能没什么问题。但是我们细看，发现在 io 写入与读取过程，是发生了 io 阻塞的情况。即：
+这种方式，虽然实现功能没什么问题。但是我们细看，发现在 IO 写入与读取过程，是发生了 IO 阻塞的情况。即：
 
 ```
-// 会发生 io 阻塞
+// 会发生 IO 阻塞
 writer.write(HttpUtil.compositeRequest(host));
 reader.readLine();
 ```
 
-所以如果要同时请求10个站点，如下：
+所以如果要同时请求10个不同的站点，如下：
 
 ```java
 public class SingleThreadApplication {
 
     public static void main(String[] args) {
 
+		// HttpConstant.HOSTS 为 站点集合
         for (String host: HttpConstant.HOSTS) {
 
             new SocketHttpClient().start(host, HttpConstant.PORT);
