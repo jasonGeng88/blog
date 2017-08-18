@@ -41,6 +41,7 @@
 	* [JAVA中最简单的分布式调用 RMI](https://github.com/jasonGeng88/blog/blob/master/201704/rmi.md)
 	* [[译]《Spring 5 官方文档》JMS (Java Message Service)](https://github.com/jasonGeng88/spring5-translate)
 	* [JMS 在 SpringBoot 中的使用](https://github.com/jasonGeng88/blog/blob/master/201706/jms.md)
+	* [JAVA 中原生的 socket 通信机制](https://github.com/jasonGeng88/blog/blob/master/201708/java-socket.md)
 	
 * 运维系列
 	* [Elasticsearch 集群配置与容器化部署](https://github.com/jasonGeng88/blog/blob/master/201704/es_cluster.md)
