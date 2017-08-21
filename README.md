@@ -42,6 +42,7 @@
 	* [[译]《Spring 5 官方文档》JMS (Java Message Service)](https://github.com/jasonGeng88/spring5-translate)
 	* [JMS 在 SpringBoot 中的使用](https://github.com/jasonGeng88/blog/blob/master/201706/jms.md)
 	* [JAVA 中原生的 socket 通信机制](https://github.com/jasonGeng88/blog/blob/master/201708/java-socket.md)
+	* [JAVA NIO 一步步构建I/O多路复用的请求模型](https://github.com/jasonGeng88/blog/blob/master/201708/java-nio.md)
 	
 * 运维系列
 	* [Elasticsearch 集群配置与容器化部署](https://github.com/jasonGeng88/blog/blob/master/201704/es_cluster.md)
