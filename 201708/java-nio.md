@@ -307,7 +307,7 @@ private void write(SelectionKey key) throws IOException {
 
 ### 处理读取就绪事件
 
-```
+```java
 private void receive(SelectionKey key) throws IOException {
     SocketChannel channel = (SocketChannel) key.channel();
     ByteBuffer buffer = ByteBuffer.allocate(1024);
@@ -343,7 +343,7 @@ private void receive(SelectionKey key) throws IOException {
 
 
 ### 完整代码
-```
+```java
 package com.jason.network.mode.nio;
 
 import com.jason.network.constant.HttpConstant;
