@@ -25,7 +25,7 @@
 
 	* [[译] 基于事件流构建的服务](https://github.com/jasonGeng88/blog/blob/master/201706/event.md)
 
-	* [[译]设计一个容错的微服务架构](https://github.com/jasonGeng88/blog/blob/master/201708/microservice-for-failure.md)
+	* [[译] 设计一个容错的微服务架构](https://github.com/jasonGeng88/blog/blob/master/201708/microservice-for-failure.md)
 
 * Kubernetes 系列
 

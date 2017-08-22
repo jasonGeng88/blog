@@ -1,4 +1,4 @@
-# [译]设计一个容错的微服务架构
+# [译] 设计一个容错的微服务架构
 > 摘要：本文属于原创，欢迎转载，转载请保留出处：[https://github.com/jasonGeng88/blog](https://github.com/jasonGeng88/blog)
 
 ## 原文地址
