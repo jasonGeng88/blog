@@ -76,25 +76,25 @@ obj.foo(); // ?
 
 ```js
 function foo() { 
-	console.log( this.a );
+    console.log( this.a );
 }
 
 var a = 2;
 
 var obj1 = { 
-	a: 3,
-	obj2: obj2 
+    a: 4,
+    foo: foo 
 };
 
 var obj2 = { 
-	a: 4,
-	foo: foo 
+    a: 3,
+    obj1: obj1
 };
 
-obj1.obj2.foo(); // ?
+obj2.obj1.foo(); //?
 ```
 
-```obj.foo()``` 打印的结果是4。
+```obj2.obj1.foo()``` 打印的结果是4。
 
 同样，我们看下函数的调用过程：
 
