@@ -22,7 +22,8 @@ this的4种绑定规则分别是：默认绑定、隐式绑定、显示绑定、
 
 ```js
 function foo() { 
-	console.log( this.a );}
+	console.log( this.a );
+}
 
 var a = 2; 
 foo(); //打印的是什么？
@@ -98,9 +99,9 @@ obj2.obj1.foo(); //?
 
 同样，我们看下函数的调用过程：
 
-先获取obj1.obj2 -> 通过引用获取到obj2对象，再访问 obj2.foo -> 最后执行foo函数调用
+先获取obj2.obj1 -> 通过引用获取到obj1对象，再访问 obj1.foo -> 最后执行foo函数调用
 
-这里调用链不只一层，存在obj1、obj2两个对象，那么隐式绑定具体会绑哪个对象。这里原则是获取最后一层调用的上下文对象，即obj2，所以结果显然是4（obj2.a）。
+这里调用链不只一层，存在obj1、obj2两个对象，那么隐式绑定具体会绑哪个对象。这里原则是获取最后一层调用的上下文对象，即obj1，所以结果显然是4（obj1.a）。
 
 #### 隐式丢失（函数别名）
 
@@ -176,7 +177,7 @@ var obj1 = {
 var obj2 = { 
 	a: 4,
 };
-foo.call( obj1 ); // ?
+foo.call( obj1 ); // ?
 foo.call( obj2 ); // ?
 ```
 
@@ -205,7 +206,8 @@ var bar = function(){
 	foo.call( obj1 );
 }
 
-bar(); // 3setTimeout( bar, 100 ); // 3
+bar(); // 3
+setTimeout( bar, 100 ); // 3
 
 bar.call( obj2 ); // 这是多少
 ```
@@ -223,7 +225,10 @@ bar.call( obj2 ); // 这是多少
 
 使用new来调用函数，会自动执行如下操作：
 
-1. 创建一个全新的对象。2. 这个新对象会被执行[[原型]]连接。3. 这个新对象会绑定到函数调用的this。4. 如果函数没有返回其他对象,那么new表达式中的函数调用会自动返回这个新对象。
+1. 创建一个全新的对象。
+2. 这个新对象会被执行[[原型]]连接。
+3. 这个新对象会绑定到函数调用的this。
+4. 如果函数没有返回其他对象,那么new表达式中的函数调用会自动返回这个新对象。
 
 从第三点可以看出，this指向的就是对象本身。
 
@@ -249,10 +254,17 @@ console.log(bar2.a); // ?
 
 ## 绑定规则优先级
 上面也说过，这里在重复一下。优先级是这样的，以按照下面的顺序来进行判断:
-1. 函数是否在new中调用(new绑定)?如果是的话this绑定的是新创建的对象。     
-     var bar = new foo()2. 函数是否通过call、apply(显式绑定)或者硬绑定调用?如果是的话,this绑定的是 指定的对象。     
-     var bar = foo.call(obj2)3. 函数是否在某个上下文对象中调用(隐式绑定)?如果是的话,this绑定的是那个上下文对象。     
-     var bar = obj1.foo()4. 如果都不是的话,使用默认绑定。如果在严格模式下,就绑定到undefined,否则绑定到 全局对象。     
+1. 函数是否在new中调用(new绑定)?如果是的话this绑定的是新创建的对象。
+     
+     var bar = new foo()
+2. 函数是否通过call、apply(显式绑定)或者硬绑定调用?如果是的话,this绑定的是 指定的对象。
+     
+     var bar = foo.call(obj2)
+3. 函数是否在某个上下文对象中调用(隐式绑定)?如果是的话,this绑定的是那个上下文对象。
+     
+     var bar = obj1.foo()
+4. 如果都不是的话,使用默认绑定。如果在严格模式下,就绑定到undefined,否则绑定到 全局对象。
+     
      var bar = foo()
 
 ## 规则例外
@@ -265,7 +277,8 @@ console.log(bar2.a); // ?
 function foo() { 
 	console.log( this.a );
 }
-var a = 2;foo.call( null ); // 2
+var a = 2;
+foo.call( null ); // 2
 foo.call( undefined ); // 2
 ```
 
